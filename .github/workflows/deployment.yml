@@ -1,27 +1,58 @@
 name: On Deployment
-run-name: Deploy to ${{ github.event.deployment.environment }}
+run-name: Deploy to ${{ github.event.deployment.environment }} (${{ github.event.deployment.ref || github.event.deployment.sha }})
 on:
   deployment:
-    types:
-      - created
-# env:
-#   # Setting an environment variable with the value of a configuration variable
-#   env_var: ${{ vars.SYSTEM_NAME }}
-#   DEPLOYENV: ${{ vars.DEPLOYENV }}
+
+env:
+  SYSTEMNAME: ${{ vars[format('ENV_{0}_SYSTEMNAME', github.event.deployment.environment)] }}
 
 jobs:
-  deploy:
+  build:
+    if: vars[format('ENV_{0}_SYSTEMNAME', github.event.deployment.environment)] != ''
     runs-on: ubuntu-latest
-    #environment: ${{ github.event.deployment.environment }}
+    name: Build
 
     steps:
       - name: Dump GitHub context
         env:
           CONTEXT: ${{ toJson(github) }}
         run: echo "$CONTEXT"
-
-      - name: Dump vars context
+      
+      - name: Dump var context
         env:
           CONTEXT: ${{ toJson(vars) }}
-        run: echo "$CONTEXT"  
+        run: echo "$CONTEXT"
 
+      - name: Dump SYSTEMNAME
+        run: |
+          echo "ENV: $SYSTEMNAME"
+          echo "VAR: ${{ vars[format('ENV_{0}_SYSTEMNAME', github.event.deployment.environment)] }}"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Deploy to Azure
+    permissions:
+      deployments: write
+
+
+    steps:
+      - name: Dump var context
+        env:
+          CONTEXT: ${{ toJson(vars) }}
+        run: echo "$CONTEXT"
+
+      - name: Dump SYSTEMNAME
+        run: |
+          echo "ENV: $SYSTEMNAME"
+          echo "VAR: ${{ vars[format('ENV_{0}_SYSTEMNAME', github.event.deployment.environment)] }}"
+
+      - name: Update deployment status
+        env:
+          GH_TOKEN: ${{ github.token }}      
+        run: |
+          gh api --method POST \
+            "repos/${{ github.repository }}/deployments/${{ github.event.deployment.id }}/statuses" \
+            -f log_url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            -f environment_url=http://example.com \
+            -f state="${{ job.status }}"
