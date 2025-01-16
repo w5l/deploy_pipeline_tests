@@ -1,0 +1,33 @@
+name: Manual
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit reference'
+        required: true
+        type: string
+      environment:
+        description: 'Environment to deploy to'
+        type: environment
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Dump GitHub context
+        env:
+          CONTEXT: ${{ toJson(github) }}
+        run: echo "$CONTEXT"
+
+      - name: Dump vars context
+        env:
+          CONTEXT: ${{ toJson(vars) }}
+        run: echo "$CONTEXT"  

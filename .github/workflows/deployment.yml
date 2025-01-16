@@ -1,0 +1,27 @@
+name: On Deployment
+run-name: Deploy to ${{ github.event.deployment.environment }}
+on:
+  deployment:
+    types:
+      - created
+# env:
+#   # Setting an environment variable with the value of a configuration variable
+#   env_var: ${{ vars.SYSTEM_NAME }}
+#   DEPLOYENV: ${{ vars.DEPLOYENV }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    #environment: ${{ github.event.deployment.environment }}
+
+    steps:
+      - name: Dump GitHub context
+        env:
+          CONTEXT: ${{ toJson(github) }}
+        run: echo "$CONTEXT"
+
+      - name: Dump vars context
+        env:
+          CONTEXT: ${{ toJson(vars) }}
+        run: echo "$CONTEXT"  
+

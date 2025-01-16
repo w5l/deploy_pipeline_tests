@@ -1,0 +1,22 @@
+name: On deployment status
+run-name: Deployment status on ${{ github.event.deployment.environment }}
+on:
+  deployment_status:
+    types:
+      - created
+
+jobs:
+  deploystatus:
+    runs-on: ubuntu-latest
+    #environment: ${{ github.event.deployment.environment }}
+
+    steps:
+      - name: Dump GitHub context
+        env:
+          CONTEXT: ${{ toJson(github) }}
+        run: echo "$CONTEXT"
+
+      - name: Dump vars context
+        env:
+          CONTEXT: ${{ toJson(vars) }}
+        run: echo "$CONTEXT"  
